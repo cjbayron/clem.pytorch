@@ -51,9 +51,8 @@ class EpisodicMemoryLearner(Learner):
         self.memory_capacity = memory_capacity # total capacity
         self.memory_sample_sz = memory_sample_sz # sampling size to use when fetching from memory
         self.memory_loader = None
-        self.memory_keys = None
 
-    def remember(self, data, min_save_sz, fill_buffer=False, keys=None):
+    def remember(self, data, min_save_sz, fill_buffer=False):
         ''' Push data to memory buffer
 
         data: instance of PyTorch Dataset
@@ -63,19 +62,10 @@ class EpisodicMemoryLearner(Learner):
             samples and flushes out buffer data in excess of capacity (in FIFO manner).
             If available space is greater than size of `data`, saves all of `data`
             in buffer.
-        keys: PyTorch Tensor which uniquely identifies the data in your
-            universal set i.e. distinct in past and future data. This might be of use
-            in scenarios where you need to store keys for later loading. For instance,
-            when training data is stored on a DB, you can save the IDs... (explain further)
-
-            Order must be same as `data`
         '''
         # size checking & correction
         if min_save_sz > self.memory_capacity:
             raise Exception("min_save_sz exceeds memory_capacity!")
-
-        if keys and (len(keys) != len(data)):
-            raise Exception("size of `keys` and `data` must match!")
 
         max_save_sz = len(data)
         if max_save_sz < min_save_sz:
@@ -112,32 +102,15 @@ class EpisodicMemoryLearner(Learner):
 
                 mem_overflow -= len(ds)
 
-        if keys:
-            keys_to_save = keys
-
         # get randomly sampled Subset from `data`
         if eff_save_sz < max_save_sz:
             indices_to_save = torch.randperm(max_save_sz)[:eff_save_sz]
-            if keys:
-                keys_to_save = keys_to_save[indices_to_save]
-
             data = Subset(data, indices=indices_to_save)
 
         if self.memory is None: # initialize memory
             self.memory = ConcatDataset([data])
         else: # concatenate memory
             self.memory = ConcatDataset([*cur_datasets, data])
-
-        if keys:
-            if self.memory_keys is None:
-                self.memory_keys = torch.Tensor([])
-
-            self.memory_keys = torch.cat((self.memory_keys, keys))
-
-
-    def dump_keys(self):
-        pass
-
 
     def forget_all(self):
         ''' Clear memory
@@ -171,7 +144,6 @@ class GEM(EpisodicMemoryLearner):
                 self.zero_grad()
                 # based on a very simple test, this
                 # samples UNIFORMLY from the whole memory.
-                # maybe better to implement IterableDataset(?)
                 #
                 # note also that in effect, this loop
                 # gets only 1 gradient vector from EACH past task
@@ -236,7 +208,6 @@ class AGEM(EpisodicMemoryLearner):
         if self.memory:
             # based on a very simple test, this
             # samples UNIFORMLY from the whole memory.
-            # maybe better to implement IterableDataset(?)
             past_i, past_l = next(iter(self.memory_loader))
             if self.device.type == 'cuda':
                 past_i, past_l = past_i.cuda(), past_l.cuda()
@@ -269,5 +240,38 @@ class AGEM(EpisodicMemoryLearner):
         '''
         '''
         super(AGEM, self).remember(data, min_save_sz, fill_buffer)
+        # treat all past datasets as single dataset
+        self.memory_loader = DataLoader(self.memory, shuffle=True, batch_size=self.memory_sample_sz)
+
+
+class ER(EpisodicMemoryLearner):
+    ''' Experience Replay
+    '''
+    def __init__(self, model, criterion, memory_capacity=1024, memory_sample_sz=128, device='cpu'):
+        '''
+        '''
+        super(ER, self).__init__(model, criterion, memory_capacity, memory_sample_sz, device)
+
+    def run(self, inputs, labels):
+        '''
+        '''
+        if self.memory:
+            # based on a very simple test, this
+            # samples UNIFORMLY from the whole memory.
+            past_i, past_l = next(iter(self.memory_loader))
+            if self.device.type == 'cuda':
+                past_i, past_l = past_i.cuda(), past_l.cuda()
+
+            # concatenate memory with current data
+            inputs = torch.cat([inputs, past_i], dim=0)
+            labels = torch.cat([labels, past_l], dim=0)
+
+        # calculate gradients on new task
+        super(ER, self).run(inputs, labels, optimize_weights=True)
+
+    def remember(self, data, min_save_sz, fill_buffer=False):
+        '''
+        '''
+        super(ER, self).remember(data, min_save_sz, fill_buffer)
         # treat all past datasets as single dataset
         self.memory_loader = DataLoader(self.memory, shuffle=True, batch_size=self.memory_sample_sz)
