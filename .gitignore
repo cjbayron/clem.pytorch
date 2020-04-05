@@ -103,6 +103,6 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# cdsd-test
+# clem.pytorch
 data/*
 !data/.gitkeep

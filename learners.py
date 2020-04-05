@@ -128,6 +128,13 @@ class GEM(EpisodicMemoryLearner):
         year={2017},
         url={https://arxiv.org/abs/1706.08840}
     }
+
+    Code based on: https://github.com/facebookresearch/GradientEpisodicMemory
+    License: Attribution-NonCommercial 4.0 International,
+             https://github.com/facebookresearch/GradientEpisodicMemory/blob/master/LICENSE
+
+    Code based on: https://github.com/GT-RIPL/Continual-Learning-Benchmark
+    License: MIT, https://github.com/GT-RIPL/Continual-Learning-Benchmark/blob/master/LICENSE
     '''
     def __init__(self, model, criterion, memory_capacity=1024, memory_sample_sz=128, device='cpu'):
         '''
@@ -196,6 +203,9 @@ class AGEM(EpisodicMemoryLearner):
       booktitle={ICLR},
       year={2019}
     }
+
+    Code based on: https://github.com/facebookresearch/agem
+    License: MIT, https://github.com/facebookresearch/agem/blob/master/LICENSE
     '''
     def __init__(self, model, criterion, memory_capacity=1024, memory_sample_sz=128, device='cpu'):
         '''
