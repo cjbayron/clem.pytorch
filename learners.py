@@ -10,8 +10,6 @@ class Learner(nn.Module):
     ''' Base class for all learners
     '''
     def __init__(self, model, criterion, device):
-        '''
-        '''
         super(Learner, self).__init__()
 
         self.model = model
@@ -26,7 +24,7 @@ class Learner(nn.Module):
         self.optimizer = optimizer(self.model.parameters(), **args)
 
     def run(self, inputs, labels, optimize_weights=True):
-        '''
+        ''' Run model on a single batch
         '''
         # calculate gradients
         self.zero_grad()
@@ -43,8 +41,6 @@ class EpisodicMemoryLearner(Learner):
     ''' Base class of episodic memory-based continual learners
     '''
     def __init__(self, model, criterion, memory_capacity, memory_sample_sz, device):
-        '''
-        '''
         super(EpisodicMemoryLearner, self).__init__(model, criterion, device)
 
         self.memory = None # will be initialized as PyTorch Dataset
@@ -137,12 +133,10 @@ class GEM(EpisodicMemoryLearner):
     License: MIT, https://github.com/GT-RIPL/Continual-Learning-Benchmark/blob/master/LICENSE
     '''
     def __init__(self, model, criterion, memory_capacity=1024, memory_sample_sz=128, device='cpu'):
-        '''
-        '''
         super(GEM, self).__init__(model, criterion, memory_capacity, memory_sample_sz, device)
 
     def run(self, inputs, labels):
-        '''
+        ''' Run GEM on a single batch
         '''
         if self.memory:
             # calculate and save gradients on previous task/s (loaders)
@@ -186,7 +180,7 @@ class GEM(EpisodicMemoryLearner):
         self.optimizer.step()
 
     def remember(self, data, min_save_sz, fill_buffer=False):
-        '''
+        ''' Push data to memory and create loaders for each task
         '''
         super(GEM, self).remember(data, min_save_sz, fill_buffer)
         # treat each dataset as a separate "task"
@@ -208,12 +202,10 @@ class AGEM(EpisodicMemoryLearner):
     License: MIT, https://github.com/facebookresearch/agem/blob/master/LICENSE
     '''
     def __init__(self, model, criterion, memory_capacity=1024, memory_sample_sz=128, device='cpu'):
-        '''
-        '''
         super(AGEM, self).__init__(model, criterion, memory_capacity, memory_sample_sz, device)
 
     def run(self, inputs, labels):
-        '''
+        ''' Run AGEM on single batch
         '''
         if self.memory:
             # based on a very simple test, this
@@ -247,7 +239,7 @@ class AGEM(EpisodicMemoryLearner):
         self.optimizer.step()
 
     def remember(self, data, min_save_sz, fill_buffer=False):
-        '''
+        ''' Push data to memory and create loader
         '''
         super(AGEM, self).remember(data, min_save_sz, fill_buffer)
         # treat all past datasets as single dataset
@@ -258,12 +250,10 @@ class ER(EpisodicMemoryLearner):
     ''' Experience Replay
     '''
     def __init__(self, model, criterion, memory_capacity=1024, memory_sample_sz=128, device='cpu'):
-        '''
-        '''
         super(ER, self).__init__(model, criterion, memory_capacity, memory_sample_sz, device)
 
     def run(self, inputs, labels):
-        '''
+        ''' Run ER on a single batch
         '''
         if self.memory:
             # based on a very simple test, this
@@ -280,7 +270,7 @@ class ER(EpisodicMemoryLearner):
         super(ER, self).run(inputs, labels, optimize_weights=True)
 
     def remember(self, data, min_save_sz, fill_buffer=False):
-        '''
+        ''' Push data to memory and create loader
         '''
         super(ER, self).remember(data, min_save_sz, fill_buffer)
         # treat all past datasets as single dataset

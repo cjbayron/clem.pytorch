@@ -82,11 +82,6 @@ In contrast to the previous test, in this we use 100% of 2 classes for each task
 |A-GEM|55.36%|15.58|
 |ER|86.96%|13.99|
 
-
-## To do
-
-* fill in more comments
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
